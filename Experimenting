@@ -1,0 +1,55 @@
+library(tidyverse)
+sets <- data.frame(FALSE,FALSE)
+names(sets) <- c("avaiable","White")
+row.names(sets) <- "initial"
+users <- data.frame(100)
+names(users) <- "White"
+row.names(users) <- "initial"
+asBool <- function(x) {
+  if (x == 0|x==FALSE |x=="false"|x=="False") {
+    return(FALSE)
+  } else{
+    return(TRUE)}
+}
+add_set <- function(newID) {
+  new_row <- list(TRUE, rep(FALSE, ncol(sets) - 1))
+  sets <<- rbind(sets, unlist(new_row))
+  row.names(sets)[nrow(sets)] <<- newID  # Set row name for the new row
+}
+remove_set <- function(SetID) {
+  if (!SetID %in% row.names(sets)) {
+    stop(paste("No row found with SetID", SetID))
+  }
+  sets <<- sets[row.names(sets) != SetID, ]
+}
+Hard_RES_user <- function(){
+  users <<- data.frame()
+}
+Hard_RES_set <- function(){
+  sets <<- data.frame(TRUE)
+  names(sets) <<- c("avaiable")
+}
+add_user <- function(newID) {
+  new_row <- list(rep(100, ncol(users)))
+  users <<- rbind(users, unlist(new_row))
+  row.names(users)[nrow(users)] <<- newID
+}
+add_tag <- function(newTag) {
+  sets[[newTag]] <<- FALSE
+  users[[newTag]] <<- 100
+}
+set_tag <- function(setID, TagName, state = TRUE) {
+  if (!setID %in% row.names(sets)) {
+    stop(paste("No row found with setID", setID))
+  }
+  if (!TagName %in% names(sets)) {
+    stop(paste("No tag found with TagName", TagName))
+  }
+  sets[[TagName]][row.names(sets) == setID] <<- asBool(state)
+}
+set_avaiability <- function(setID, state = TRUE) {
+  if (!setID %in% row.names(sets)) {
+    stop(paste("No row found with setID", setID))
+  }
+  sets[["avaiable"]][row.names(sets) == setID] <<- asBool(state)
+}
