@@ -1,55 +1,74 @@
 library(tidyverse)
-sets <- data.frame(FALSE,FALSE)
-names(sets) <- c("avaiable","White")
-row.names(sets) <- "initial"
+sets <- data.frame(properties = list())
+
+add_set <- function(newID) {
+  new_row <- data.frame(properties = I(list(data.frame(ava = TRUE))))
+  names(new_row$properties) <- newID
+  sets <<- rbind(sets, new_row)
+  row.names(sets)[nrow(sets)] <<- newID  # Set row name for the new row
+}
+set_tag <- function(setID, TagName, state = TRUE) { #don't use for avaiable [ava]
+  if(state) {
+    if(!(TagName %in% names(users))) add_tag(TagName)
+    sets$properties[[setID]][[TagName]] <<- TRUE
+  }
+  else sets$properties[[setID]][[TagName]] <<- NULL
+}
+set_avaiability <- function(setID, state = TRUE) {
+  sets$properties[[setID]]$ava <<- state
+}
+remove_tag<-function(TagName){
+  users[[TagName]] <- NULL
+}
+add_tag <- function(TagName){
+  users[[TagName]] <<- 100
+}
+remove_set <- function(setID) {
+  if (setID %in% row.names(sets)) {
+    sets <<- sets[row.names(sets) != setID, , drop = FALSE]
+  } else {
+    warning(paste0("Row '", setID, "' not found in sets."))
+  }
+}
 users <- data.frame(100)
 names(users) <- "White"
 row.names(users) <- "initial"
-asBool <- function(x) {
-  if (x == 0|x==FALSE |x=="false"|x=="False") {
-    return(FALSE)
-  } else{
-    return(TRUE)}
-}
-add_set <- function(newID) {
-  new_row <- list(TRUE, rep(FALSE, ncol(sets) - 1))
-  sets <<- rbind(sets, unlist(new_row))
-  row.names(sets)[nrow(sets)] <<- newID  # Set row name for the new row
-}
-remove_set <- function(SetID) {
-  if (!SetID %in% row.names(sets)) {
-    stop(paste("No row found with SetID", SetID))
-  }
-  sets <<- sets[row.names(sets) != SetID, ]
-}
-Hard_RES_user <- function(){
-  users <<- data.frame()
-}
-Hard_RES_set <- function(){
-  sets <<- data.frame(TRUE)
-  names(sets) <<- c("avaiable")
-}
+
 add_user <- function(newID) {
   new_row <- list(rep(100, ncol(users)))
   users <<- rbind(users, unlist(new_row))
   row.names(users)[nrow(users)] <<- newID
 }
-add_tag <- function(newTag) {
-  sets[[newTag]] <<- FALSE
-  users[[newTag]] <<- 100
+remove_user <- function(UserID){
+  users <<- users %>% filter(row.names(users) != UserID) # don't remove the last user
 }
-set_tag <- function(setID, TagName, state = TRUE) {
-  if (!setID %in% row.names(sets)) {
-    stop(paste("No row found with setID", setID))
+
+give_next <- function(UserID){ # returns a random set from the top 5 best match from 100 randomly selected sets
+  x <- sample(nrow(sets),min(nrow(sets),100),replace = FALSE)
+  y<- vector("numeric", length = min(nrow(sets),100))
+  i<- 1
+  for (rownum in x) {
+    tags <- sets$properties[rownum][[names(sets$properties[rownum])]]
+    tags <- tags[-1]
+    #print(tags)
+    weight<-0
+    for (tag in names(tags)) {
+      weight <- weight + as.numeric(users[UserID,tag])
+    #print(weight)
+    }
+    y[i] <- (weight/length(tags))
+    i <- i+1
   }
-  if (!TagName %in% names(sets)) {
-    stop(paste("No tag found with TagName", TagName))
-  }
-  sets[[TagName]][row.names(sets) == setID] <<- asBool(state)
-}
-set_avaiability <- function(setID, state = TRUE) {
-  if (!setID %in% row.names(sets)) {
-    stop(paste("No row found with setID", setID))
-  }
-  sets[["avaiable"]][row.names(sets) == setID] <<- asBool(state)
+  #print("y: ")
+  #print(y)
+  #print("x: ")
+  #print(x)
+  y <- order(y,decreasing = TRUE)
+  #print("yordered: ")
+  #print(y)
+  x <- x[y]
+  #print("xordered: ")
+  #print(x)
+  a <- sample(1:min(nrow(sets),5),1)
+  return (sets$properties[x[a]])
 }
